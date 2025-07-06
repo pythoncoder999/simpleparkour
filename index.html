@@ -1,26 +1,332 @@
-I'll create a simple parkour game for you with HTML and JavaScript. This will be a 2D side-scrolling game where you control a character jumping over obstacles.I've created a simple parkour game for you! Here's what the game includes:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Parkour Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameContainer {
+            background: #87CEEB;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 70%, #8B4513 100%);
+        }
+        
+        #gameInfo {
+            padding: 10px;
+            background: #333;
+            color: white;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,0,0,0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        SPACE: Jump<br>
+        SHIFT: Wall Jump<br>
+        A/D: Move Left/Right
+    </div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="gameInfo">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+    </div>
+    
+    <div id="gameOver" class="game-over">
+        <h2>Game Over!</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>Press R to Restart</p>
+    </div>
 
-**Features:**
-- **Player character** (red square with eyes) that can move and jump
-- **Multiple platforms** to jump on at different heights
-- **Moving obstacles** (red spikes) that you need to avoid
-- **Wall jumping** mechanics for advanced movement
-- **Score system** and lives counter
-- **Game over screen** with restart option
-
-**Controls:**
-- **SPACE**: Jump (when on ground)
-- **SHIFT**: Wall jump (when touching a wall)
-- **A/D** or **Arrow Keys**: Move left/right
-- **R**: Restart game (when game over)
-
-**How to Play:**
-1. Jump over or avoid the red obstacles coming from the right
-2. Use the platforms to reach higher areas
-3. Wall jump for advanced movement
-4. You have 3 lives - lose one each time you hit an obstacle
-5. Score increases over time and when you successfully avoid obstacles
-
-The game features smooth physics, collision detection, and a nice visual style with animated clouds. You can easily copy this HTML code and paste it into your GitHub Pages repository as `index.html` to make it live on the web!
-
-Want me to add any specific features like power-ups, different obstacle types, or more complex level design?
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game variables
+        let score = 0;
+        let lives = 3;
+        let gameRunning = true;
+        let keys = {};
+        
+        // Player object
+        const player = {
+            x: 100,
+            y: 300,
+            width: 30,
+            height: 30,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 5,
+            jumpPower: 12,
+            onGround: false,
+            canWallJump: false,
+            color: '#FF4444'
+        };
+        
+        // Obstacles array
+        let obstacles = [];
+        let platforms = [];
+        
+        // Initialize platforms
+        platforms.push({x: 0, y: 370, width: 800, height: 30, color: '#8B4513'});
+        platforms.push({x: 200, y: 250, width: 100, height: 20, color: '#654321'});
+        platforms.push({x: 400, y: 180, width: 100, height: 20, color: '#654321'});
+        platforms.push({x: 600, y: 120, width: 100, height: 20, color: '#654321'});
+        
+        // Initialize obstacles
+        function createObstacle() {
+            obstacles.push({
+                x: 800,
+                y: 340,
+                width: 20,
+                height: 30,
+                speed: 3,
+                color: '#8B0000'
+            });
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            if (e.key === ' ') {
+                e.preventDefault();
+                if (player.onGround) {
+                    player.velocityY = -player.jumpPower;
+                    player.onGround = false;
+                }
+            }
+            
+            if (e.key === 'Shift' && player.canWallJump) {
+                player.velocityY = -player.jumpPower;
+                player.velocityX = player.velocityX > 0 ? -8 : 8;
+                player.canWallJump = false;
+            }
+            
+            if (e.key.toLowerCase() === 'r' && !gameRunning) {
+                restartGame();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Game functions
+        function update() {
+            if (!gameRunning) return;
+            
+            // Player movement
+            if (keys['a'] || keys['arrowleft']) {
+                player.velocityX = -player.speed;
+            } else if (keys['d'] || keys['arrowright']) {
+                player.velocityX = player.speed;
+            } else {
+                player.velocityX *= 0.8; // Friction
+            }
+            
+            // Apply gravity
+            player.velocityY += 0.5;
+            
+            // Update player position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Keep player in bounds
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            
+            // Platform collision
+            player.onGround = false;
+            player.canWallJump = false;
+            
+            for (let platform of platforms) {
+                // Top collision (landing)
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + platform.height + 10 &&
+                    player.velocityY > 0) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                }
+                
+                // Side collision (wall jump)
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    if (player.x + player.width/2 < platform.x + platform.width/2) {
+                        player.canWallJump = true;
+                    } else {
+                        player.canWallJump = true;
+                    }
+                }
+            }
+            
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= obstacles[i].speed;
+                
+                // Remove obstacles that are off screen
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                }
+                
+                // Check collision with player
+                if (player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y) {
+                    lives--;
+                    obstacles.splice(i, 1);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+            
+            // Create new obstacles
+            if (Math.random() < 0.008) {
+                createObstacle();
+            }
+            
+            // Update score
+            score++;
+            updateUI();
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw platforms
+            for (let platform of platforms) {
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            }
+            
+            // Draw player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw player eyes
+            ctx.fillStyle = 'white';
+            ctx.fillRect(player.x + 5, player.y + 5, 6, 6);
+            ctx.fillRect(player.x + 15, player.y + 5, 6, 6);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x + 7, player.y + 7, 2, 2);
+            ctx.fillRect(player.x + 17, player.y + 7, 2, 2);
+            
+            // Draw obstacles
+            for (let obstacle of obstacles) {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            }
+            
+            // Draw clouds
+            drawClouds();
+        }
+        
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            const cloudOffset = (Date.now() * 0.02) % 1000;
+            
+            for (let i = 0; i < 3; i++) {
+                let x = (i * 300 - cloudOffset) % 900;
+                let y = 50 + i * 20;
+                
+                // Simple cloud shape
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.arc(x + 25, y, 25, 0, Math.PI * 2);
+                ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            gameRunning = true;
+            player.x = 100;
+            player.y = 300;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            obstacles = [];
+            document.getElementById('gameOver').style.display = 'none';
+            updateUI();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>
