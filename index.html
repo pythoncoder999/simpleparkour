@@ -3,816 +3,817 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Parkour Adventure</title>
+    <title>3D Parkour Adventure</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d2d5a 100%);
+            overflow: hidden;
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
         }
-        
-        #gameContainer {
-            background: #000;
-            border: 4px solid #444;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            position: relative;
+
+        #startScreen h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        
-        #gameCanvas {
-            display: block;
-            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 60%, #8B4513 100%);
+
+        #startScreen p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            opacity: 0.9;
         }
-        
-        #gameInfo {
-            padding: 12px;
-            background: linear-gradient(45deg, #333, #555);
+
+        #startButton {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            border-radius: 25px;
             color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        #startButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 200px;
+        }
+
+        .hud-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 16px;
-            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
-        
+
+        .hud-value {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
         #controls {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            z-index: 10;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
         }
-        
-        .game-over, .level-complete {
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-right: 10px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            font-size: 24px;
-            display: none;
-            z-index: 20;
-            border: 3px solid #FFD700;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
-        
-        .power-up-indicator {
+
+        #crosshair::before {
+            content: '';
             position: absolute;
-            top: 50px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
         }
-        
-        .progress-bar {
-            width: 200px;
-            height: 8px;
-            background: #333;
-            border-radius: 4px;
-            overflow: hidden;
+
+        #statusMessages {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            text-align: center;
+            pointer-events: none;
         }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
-            transition: width 0.3s ease;
+
+        .status-message {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 5px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-message.show {
+            opacity: 1;
+        }
+
+        canvas {
+            display: block;
+            cursor: none;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div id="controls">
-        SPACE/W: Jump<br>
-        SHIFT: Wall Jump<br>
-        A/D: Move<br>
-        S: Slide<br>
-        Q: Dash<br>
-        E: Use Power-up
-    </div>
-    
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="1000" height="500"></canvas>
-        <div id="gameInfo">
-            <div>
-                <span>Score: <span id="score">0</span></span>
-                <span style="margin-left: 20px;">Lives: <span id="lives">5</span></span>
-                <span style="margin-left: 20px;">Level: <span id="level">1</span></span>
+        <div id="startScreen">
+            <h1>PARKOUR MASTER</h1>
+            <p>Navigate through the 3D obstacle course using parkour moves!<br>
+               Master wall-running, precision jumps, and fluid movement.</p>
+            <button id="startButton">START ADVENTURE</button>
+        </div>
+
+        <div id="hud" class="hidden">
+            <div class="hud-item">
+                <span>Speed:</span>
+                <span class="hud-value" id="speed">0 km/h</span>
             </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="levelProgress" style="width: 0%"></div>
+            <div class="hud-item">
+                <span>Height:</span>
+                <span class="hud-value" id="height">0m</span>
             </div>
-            <div>
-                <span>Coins: <span id="coins">0</span></span>
-                <span style="margin-left: 20px;">Speed: <span id="speed">1x</span></span>
+            <div class="hud-item">
+                <span>State:</span>
+                <span class="hud-value" id="state">Grounded</span>
+            </div>
+            <div class="hud-item">
+                <span>Time:</span>
+                <span class="hud-value" id="timer">0:00</span>
             </div>
         </div>
-    </div>
-    
-    <div id="powerUpIndicator" class="power-up-indicator" style="display: none;">
-        <div id="powerUpText">No Power-up</div>
-        <div id="powerUpTimer" style="font-size: 12px; color: #aaa;"></div>
-    </div>
-    
-    <div id="gameOver" class="game-over">
-        <h2>💀 Game Over! 💀</h2>
-        <p>Final Score: <span id="finalScore">0</span></p>
-        <p>Level Reached: <span id="finalLevel">1</span></p>
-        <p>Coins Collected: <span id="finalCoins">0</span></p>
-        <p>Press R to Restart</p>
-    </div>
-    
-    <div id="levelComplete" class="level-complete">
-        <h2>🎉 Level Complete! 🎉</h2>
-        <p>Bonus Points: <span id="bonusPoints">0</span></p>
-        <p>Press SPACE to Continue</p>
+
+        <div id="controls" class="hidden">
+            <div class="control-row">
+                <span class="key">WASD</span>
+                <span>Move & Strafe</span>
+            </div>
+            <div class="control-row">
+                <span class="key">SPACE</span>
+                <span>Jump / Wall Run</span>
+            </div>
+            <div class="control-row">
+                <span class="key">SHIFT</span>
+                <span>Sprint</span>
+            </div>
+            <div class="control-row">
+                <span class="key">CTRL</span>
+                <span>Slide</span>
+            </div>
+            <div class="control-row">
+                <span class="key">MOUSE</span>
+                <span>Look Around (Click & Drag if pointer lock fails)</span>
+            </div>
+            <div class="control-row">
+                <span class="key">ESC</span>
+                <span>Release Cursor</span>
+            </div>
+        </div>
+
+        <div id="crosshair" class="hidden"></div>
+
+        <div id="statusMessages"></div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
         // Game state
-        let score = 0;
-        let lives = 5;
-        let level = 1;
-        let coins = 0;
-        let gameRunning = true;
-        let keys = {};
-        let gameSpeed = 1;
-        let levelProgress = 0;
-        let particleSystem = [];
-        let powerUps = [];
-        let enemies = [];
-        let coins_objects = [];
-        let checkpoints = [];
-        
-        // Player object with advanced abilities
-        const player = {
-            x: 100,
-            y: 350,
-            width: 25,
-            height: 25,
-            velocityX: 0,
-            velocityY: 0,
-            speed: 6,
-            jumpPower: 14,
-            onGround: false,
-            canWallJump: false,
-            canDoubleJump: true,
-            doubleJumpUsed: false,
-            color: '#FF4444',
-            dashCooldown: 0,
-            dashPower: 15,
-            sliding: false,
-            slideTime: 0,
-            invulnerable: false,
-            invulnerableTime: 0,
-            currentPowerUp: null,
-            powerUpTime: 0,
-            trailParticles: []
-        };
-        
-        // Game objects
-        let obstacles = [];
-        let platforms = [];
-        let movingPlatforms = [];
-        
-        // Power-up types
-        const powerUpTypes = {
-            SPEED: {name: 'Speed Boost', color: '#00FF00', duration: 300},
-            SHIELD: {name: 'Shield', color: '#0080FF', duration: 200},
-            DOUBLE_JUMP: {name: 'Multi Jump', color: '#FF8000', duration: 400},
-            SLOW_TIME: {name: 'Slow Time', color: '#FF00FF', duration: 250},
-            COIN_MAGNET: {name: 'Coin Magnet', color: '#FFD700', duration: 350}
-        };
-        
-        // Initialize level
-        function initializeLevel() {
-            platforms = [];
-            obstacles = [];
-            movingPlatforms = [];
-            powerUps = [];
-            enemies = [];
-            coins_objects = [];
-            checkpoints = [];
+        let gameStarted = false;
+        let gameTime = 0;
+        let scene, camera, renderer, player, world = [];
+        let keys = {}, mouseMovement = { x: 0, y: 0 };
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let playerState = 'Grounded';
+        let lastTime = 0;
+
+        // Physics constants
+        const GRAVITY = -30;
+        const JUMP_FORCE = 12;
+        const MOVE_SPEED = 25;
+        const SPRINT_MULTIPLIER = 1.8;
+        const AIR_CONTROL = 0.3;
+        const WALL_RUN_FORCE = 8;
+        const SLIDE_FRICTION = 0.95;
+
+        // Player state
+        let onGround = false;
+        let wallRunning = false;
+        let sliding = false;
+        let canJump = true;
+        let wallRunTimer = 0;
+        let slideTimer = 0;
+
+        // Camera controls
+        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        let PI_2 = Math.PI / 2;
+        let isPointerLocked = false;
+
+        // Collision detection
+        let raycaster = new THREE.Raycaster();
+        let playerBox = new THREE.Box3();
+
+        // Initialize game
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f0f23);
+            scene.fog = new THREE.Fog(0x0f0f23, 80, 200);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
             
-            // Base ground
-            platforms.push({x: 0, y: 470, width: 1000, height: 30, color: '#8B4513', type: 'ground'});
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(100, 100, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            scene.add(directionalLight);
+
+            // Point lights for atmosphere
+            const pointLight1 = new THREE.PointLight(0xff6b6b, 1, 50);
+            pointLight1.position.set(25, 15, 25);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0x4ecdc4, 1, 50);
+            pointLight2.position.set(-25, 15, -25);
+            scene.add(pointLight2);
+
+            // Create player
+            createPlayer();
             
-            // Generate level based on current level
-            generateLevel();
+            // Create world
+            createWorld();
             
-            levelProgress = 0;
-            player.x = 100;
-            player.y = 350;
-            player.velocityX = 0;
-            player.velocityY = 0;
-            player.currentPowerUp = null;
-            player.powerUpTime = 0;
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Start render loop
+            animate();
         }
-        
-        function generateLevel() {
-            const difficulty = Math.min(level, 10);
+
+        function createPlayer() {
+            player = new THREE.Object3D();
+            player.position.set(0, 10, 0);
+            scene.add(player);
+
+            // Add camera to player
+            player.add(camera);
+            camera.position.set(0, 1.7, 0);
+        }
+
+        function createWorld() {
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(300, 300);
+            const groundMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a3e,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            world.push(ground);
+
+            createParkourCourse();
+        }
+
+        function createParkourCourse() {
+            const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57, 0xff9ff3];
             
-            // Static platforms
-            for (let i = 0; i < 8 + difficulty; i++) {
-                platforms.push({
-                    x: 200 + i * 120,
-                    y: 400 - Math.random() * 200,
-                    width: 80 + Math.random() * 40,
-                    height: 15,
-                    color: '#654321',
-                    type: 'platform'
-                });
-            }
+            // Starting platform
+            createPlatform(0, 1, 0, 15, 2, 15, 0x4ecdc4);
             
-            // Moving platforms
-            for (let i = 0; i < 2 + Math.floor(difficulty/2); i++) {
-                movingPlatforms.push({
-                    x: 300 + i * 200,
-                    y: 300 - Math.random() * 150,
-                    width: 80,
-                    height: 15,
-                    color: '#4169E1',
-                    velocityX: 1 + Math.random() * 2,
-                    velocityY: 0.5 + Math.random(),
-                    minX: 200 + i * 200,
-                    maxX: 400 + i * 200,
-                    minY: 200,
-                    maxY: 400
-                });
-            }
+            // Jump sequence
+            createPlatform(20, 3, 0, 8, 2, 8, colors[0]);
+            createPlatform(35, 5, 5, 6, 2, 6, colors[1]);
+            createPlatform(45, 7, -5, 8, 2, 8, colors[2]);
             
-            // Coins
-            for (let i = 0; i < 15 + difficulty * 2; i++) {
-                coins_objects.push({
-                    x: 200 + Math.random() * 700,
-                    y: 100 + Math.random() * 300,
-                    width: 20,
-                    height: 20,
-                    collected: false,
-                    bounce: Math.random() * Math.PI * 2
-                });
-            }
+            // Wall running section
+            createWall(60, 8, 0, 3, 16, 25, colors[3]);
+            createWall(80, 12, 0, 3, 16, 25, colors[4]);
+            createPlatform(100, 12, 0, 12, 2, 12, colors[5]);
             
-            // Power-ups
-            for (let i = 0; i < 3 + Math.floor(difficulty/2); i++) {
-                const types = Object.keys(powerUpTypes);
-                const type = types[Math.floor(Math.random() * types.length)];
-                powerUps.push({
-                    x: 250 + Math.random() * 600,
-                    y: 150 + Math.random() * 250,
-                    width: 25,
-                    height: 25,
-                    type: type,
-                    collected: false,
-                    pulse: 0
-                });
-            }
+            // Vertical challenge
+            createPlatform(120, 15, 0, 6, 2, 6, colors[0]);
+            createPlatform(130, 18, 8, 6, 2, 6, colors[1]);
+            createPlatform(140, 21, -8, 6, 2, 6, colors[2]);
             
-            // Enemies
-            for (let i = 0; i < difficulty; i++) {
-                enemies.push({
-                    x: 400 + i * 150,
-                    y: 440,
-                    width: 25,
-                    height: 25,
-                    velocityX: 1 + Math.random() * 2,
-                    color: '#8B0000',
-                    patrolMin: 300 + i * 150,
-                    patrolMax: 500 + i * 150,
-                    type: 'patrol'
-                });
-            }
+            // Slide section
+            createRamp(160, 21, 0, 20, 4, 10, colors[3]);
+            createPlatform(185, 15, 0, 15, 2, 15, colors[4]);
             
-            // Checkpoints
-            for (let i = 0; i < 3; i++) {
-                checkpoints.push({
-                    x: 300 + i * 250,
-                    y: 420,
-                    width: 30,
-                    height: 50,
-                    activated: false
-                });
+            // Final challenge
+            createSpiral(200, 0, 0);
+            
+            // Scattered obstacles
+            for (let i = 0; i < 20; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const z = (Math.random() - 0.5) * 200;
+                const y = Math.random() * 10 + 2;
+                const size = Math.random() * 3 + 2;
+                createPlatform(x, y, z, size, size, size, colors[Math.floor(Math.random() * colors.length)]);
             }
         }
-        
-        // Event listeners
-        document.addEventListener('keydown', (e) => {
-            keys[e.key.toLowerCase()] = true;
+
+        function createPlatform(x, y, z, w, h, d, color) {
+            const geometry = new THREE.BoxGeometry(w, h, d);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const platform = new THREE.Mesh(geometry, material);
+            platform.position.set(x, y, z);
+            platform.castShadow = true;
+            platform.receiveShadow = true;
+            scene.add(platform);
+            world.push(platform);
+        }
+
+        function createWall(x, y, z, w, h, d, color) {
+            const geometry = new THREE.BoxGeometry(w, h, d);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const wall = new THREE.Mesh(geometry, material);
+            wall.position.set(x, y, z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+            world.push(wall);
+        }
+
+        function createRamp(x, y, z, w, h, d, color) {
+            const geometry = new THREE.BoxGeometry(w, h, d);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const ramp = new THREE.Mesh(geometry, material);
+            ramp.position.set(x, y, z);
+            ramp.rotation.z = -Math.PI / 8;
+            ramp.castShadow = true;
+            ramp.receiveShadow = true;
+            scene.add(ramp);
+            world.push(ramp);
+        }
+
+        function createSpiral(x, y, z) {
+            const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57, 0xff9ff3];
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2;
+                const radius = 15;
+                const platformX = x + Math.cos(angle) * radius;
+                const platformZ = z + Math.sin(angle) * radius;
+                const platformY = y + i * 3;
+                createPlatform(platformX, platformY, platformZ, 6, 1, 6, colors[i % colors.length]);
+            }
+        }
+
+        function setupEventListeners() {
+            // Keyboard events
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
             
-            if (e.key === ' ' || e.key.toLowerCase() === 'w') {
-                e.preventDefault();
-                if (player.onGround) {
-                    player.velocityY = -player.jumpPower;
-                    player.onGround = false;
-                    player.doubleJumpUsed = false;
-                    createParticles(player.x + player.width/2, player.y + player.height, 5, '#FFFFFF');
-                } else if (player.canDoubleJump && !player.doubleJumpUsed) {
-                    player.velocityY = -player.jumpPower * 0.8;
-                    player.doubleJumpUsed = true;
-                    createParticles(player.x + player.width/2, player.y + player.height/2, 8, '#FFD700');
+            // Mouse events
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', (event) => {
+                if (gameStarted && !isPointerLocked) {
+                    // Try to request pointer lock on mouse down
+                    requestPointerLock();
+                }
+            });
+            document.addEventListener('click', (event) => {
+                if (gameStarted && !isPointerLocked) {
+                    requestPointerLock();
+                }
+            });
+            
+            // Pointer lock events with cross-browser support
+            const pointerLockChange = () => onPointerLockChange();
+            const pointerLockError = () => onPointerLockError();
+            
+            document.addEventListener('pointerlockchange', pointerLockChange);
+            document.addEventListener('mozpointerlockchange', pointerLockChange);
+            document.addEventListener('webkitpointerlockchange', pointerLockChange);
+            
+            document.addEventListener('pointerlockerror', pointerLockError);
+            document.addEventListener('mozpointerlockerror', pointerLockError);
+            document.addEventListener('webkitpointerlockerror', pointerLockError);
+            
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start button
+            document.getElementById('startButton').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+            gameStarted = true;
+            gameTime = 0;
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+            document.getElementById('crosshair').classList.remove('hidden');
+            requestPointerLock();
+        }
+
+        function onKeyDown(event) {
+            keys[event.code] = true;
+            if (event.code === 'Escape') {
+                document.exitPointerLock();
+            }
+        }
+
+        function onKeyUp(event) {
+            keys[event.code] = false;
+        }
+
+        function onMouseMove(event) {
+            if (!isPointerLocked) {
+                // Fallback for when pointer lock isn't working
+                if (gameStarted && event.buttons === 1) {
+                    // Only rotate when mouse is pressed down
+                    const movementX = event.movementX || event.webkitMovementX || event.mozMovementX || 0;
+                    const movementY = event.movementY || event.webkitMovementY || event.mozMovementY || 0;
+                    
+                    euler.setFromQuaternion(camera.quaternion);
+                    euler.y -= movementX * 0.002;
+                    euler.x -= movementY * 0.002;
+                    euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+                    camera.quaternion.setFromEuler(euler);
+                }
+                return;
+            }
+            
+            const movementX = event.movementX || event.webkitMovementX || event.mozMovementX || 0;
+            const movementY = event.movementY || event.webkitMovementY || event.mozMovementY || 0;
+            
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= movementX * 0.002;
+            euler.x -= movementY * 0.002;
+            euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+            camera.quaternion.setFromEuler(euler);
+        }
+
+        function requestPointerLock() {
+            if (!gameStarted) return;
+            
+            // Check if pointer lock is supported
+            if (!renderer.domElement.requestPointerLock) {
+                console.warn('Pointer lock not supported');
+                return;
+            }
+            
+            // Request pointer lock with error handling
+            try {
+                renderer.domElement.requestPointerLock();
+            } catch (error) {
+                console.error('Failed to request pointer lock:', error);
+            }
+        }
+
+        function onPointerLockChange() {
+            isPointerLocked = document.pointerLockElement === renderer.domElement ||
+                             document.mozPointerLockElement === renderer.domElement ||
+                             document.webkitPointerLockElement === renderer.domElement;
+        }
+
+        function onPointerLockError() {
+            console.warn('Pointer lock error - you can still play without it');
+            // Show a message to the user
+            showStatusMessage('Pointer lock failed - mouse look may be limited');
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function updateMovement(deltaTime) {
+            if (!gameStarted) return;
+            
+            gameTime += deltaTime;
+            
+            // Handle input
+            direction.set(0, 0, 0);
+            
+            if (keys['KeyW']) direction.z -= 1;
+            if (keys['KeyS']) direction.z += 1;
+            if (keys['KeyA']) direction.x -= 1;
+            if (keys['KeyD']) direction.x += 1;
+            
+            const isSprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+            const isSliding = keys['ControlLeft'] || keys['ControlRight'];
+            
+            // Normalize direction
+            if (direction.length() > 0) {
+                direction.normalize();
+                direction.applyQuaternion(camera.quaternion);
+                direction.y = 0;
+                direction.normalize();
+            }
+            
+            // Calculate movement speed
+            let currentSpeed = MOVE_SPEED;
+            if (isSprinting) currentSpeed *= SPRINT_MULTIPLIER;
+            
+            // Handle sliding
+            if (isSliding && onGround && !sliding) {
+                sliding = true;
+                slideTimer = 0;
+                velocity.x *= 1.5;
+                velocity.z *= 1.5;
+                playerState = 'Sliding';
+                showStatusMessage('Sliding!');
+            }
+            
+            if (sliding) {
+                slideTimer += deltaTime;
+                velocity.x *= SLIDE_FRICTION;
+                velocity.z *= SLIDE_FRICTION;
+                
+                if (slideTimer > 1.5 || !isSliding) {
+                    sliding = false;
+                    slideTimer = 0;
                 }
             }
             
-            if (e.key === 'Shift' && player.canWallJump) {
-                player.velocityY = -player.jumpPower;
-                player.velocityX = player.velocityX > 0 ? -10 : 10;
-                player.canWallJump = false;
-                createParticles(player.x + player.width/2, player.y + player.height/2, 6, '#00FFFF');
-            }
-            
-            if (e.key.toLowerCase() === 'q' && player.dashCooldown <= 0) {
-                const dashDirection = keys['d'] ? 1 : keys['a'] ? -1 : 1;
-                player.velocityX = player.dashPower * dashDirection;
-                player.dashCooldown = 60;
-                player.invulnerable = true;
-                player.invulnerableTime = 20;
-                createParticles(player.x + player.width/2, player.y + player.height/2, 10, '#FF0080');
-            }
-            
-            if (e.key.toLowerCase() === 's') {
-                if (player.onGround) {
-                    player.sliding = true;
-                    player.slideTime = 30;
+            // Apply movement
+            if (onGround && !sliding) {
+                velocity.x = direction.x * currentSpeed;
+                velocity.z = direction.z * currentSpeed;
+                
+                if (keys['Space'] && canJump) {
+                    velocity.y = JUMP_FORCE;
+                    canJump = false;
+                    onGround = false;
+                    playerState = 'Jumping';
+                    showStatusMessage('Jump!');
                 }
-            }
-            
-            if (e.key.toLowerCase() === 'e' && player.currentPowerUp) {
-                activatePowerUp();
-            }
-            
-            if (e.key.toLowerCase() === 'r' && !gameRunning) {
-                restartGame();
-            }
-            
-            if (e.key === ' ' && document.getElementById('levelComplete').style.display !== 'none') {
-                nextLevel();
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            keys[e.key.toLowerCase()] = false;
-            
-            if (e.key.toLowerCase() === 's') {
-                player.sliding = false;
-            }
-        });
-        
-        // Game functions
-        function update() {
-            if (!gameRunning) return;
-            
-            // Update timers
-            if (player.dashCooldown > 0) player.dashCooldown--;
-            if (player.invulnerableTime > 0) player.invulnerableTime--;
-            if (player.invulnerableTime <= 0) player.invulnerable = false;
-            if (player.slideTime > 0) player.slideTime--;
-            if (player.slideTime <= 0) player.sliding = false;
-            if (player.powerUpTime > 0) player.powerUpTime--;
-            if (player.powerUpTime <= 0) player.currentPowerUp = null;
-            
-            // Player movement
-            let moveSpeed = player.speed;
-            if (player.currentPowerUp === 'SPEED') moveSpeed *= 2;
-            if (player.sliding) moveSpeed *= 0.3;
-            
-            if (keys['a'] || keys['arrowleft']) {
-                player.velocityX = -moveSpeed;
-            } else if (keys['d'] || keys['arrowright']) {
-                player.velocityX = moveSpeed;
-            } else {
-                player.velocityX *= 0.85;
+            } else if (!onGround) {
+                // Air control
+                velocity.x += direction.x * currentSpeed * AIR_CONTROL * deltaTime;
+                velocity.z += direction.z * currentSpeed * AIR_CONTROL * deltaTime;
+                
+                // Check for wall running
+                checkWallRunning();
             }
             
             // Apply gravity
-            let gravity = 0.6;
-            if (player.currentPowerUp === 'SLOW_TIME') gravity *= 0.5;
-            player.velocityY += gravity;
-            
-            // Update player position
-            player.x += player.velocityX;
-            player.y += player.velocityY;
-            
-            // Keep player in bounds
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-            
-            // Platform collision
-            checkCollisions();
-            
-            // Update moving platforms
-            updateMovingPlatforms();
-            
-            // Update obstacles
-            updateObstacles();
-            
-            // Update enemies
-            updateEnemies();
-            
-            // Update particles
-            updateParticles();
-            
-            // Update power-ups
-            updatePowerUps();
-            
-            // Update coins
-            updateCoins();
-            
-            // Update checkpoints
-            updateCheckpoints();
-            
-            // Check level completion
-            levelProgress += 0.1;
-            if (levelProgress >= 100) {
-                completeLevel();
+            if (!wallRunning) {
+                velocity.y += GRAVITY * deltaTime;
             }
+            
+            // Update position
+            const deltaPosition = velocity.clone().multiplyScalar(deltaTime);
+            player.position.add(deltaPosition);
+            
+            // Check collisions
+            checkCollisions();
             
             // Update UI
             updateUI();
         }
-        
-        function checkCollisions() {
-            player.onGround = false;
-            player.canWallJump = false;
+
+        function checkWallRunning() {
+            if (onGround) {
+                wallRunning = false;
+                wallRunTimer = 0;
+                return;
+            }
             
-            // Platform collisions
-            const allPlatforms = [...platforms, ...movingPlatforms];
-            for (let platform of allPlatforms) {
-                if (player.x < platform.x + platform.width &&
-                    player.x + player.width > platform.x &&
-                    player.y < platform.y + platform.height &&
-                    player.y + player.height > platform.y) {
-                    
-                    // Top collision
-                    if (player.velocityY > 0 && player.y < platform.y) {
-                        player.y = platform.y - player.height;
-                        player.velocityY = 0;
-                        player.onGround = true;
-                        player.doubleJumpUsed = false;
-                    }
-                    // Side collision
-                    else if (Math.abs(player.velocityX) > 1) {
-                        player.canWallJump = true;
-                        if (player.x + player.width/2 < platform.x + platform.width/2) {
-                            player.x = platform.x - player.width;
-                        } else {
-                            player.x = platform.x + platform.width;
+            const directions = [
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(-1, 0, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(0, 0, -1)
+            ];
+            
+            let foundWall = false;
+            
+            for (let dir of directions) {
+                raycaster.set(player.position, dir);
+                const intersects = raycaster.intersectObjects(world);
+                
+                if (intersects.length > 0 && intersects[0].distance < 2.5) {
+                    if (keys['Space'] && velocity.y < 2) {
+                        wallRunning = true;
+                        wallRunTimer += 0.016; // Approximate delta time
+                        
+                        if (wallRunTimer < 3) { // 3 second wall run limit
+                            velocity.y = Math.max(velocity.y, -3);
+                            playerState = 'Wall Running';
+                            
+                            // Wall jump
+                            if (keys['Space']) {
+                                const wallNormal = intersects[0].face.normal.clone();
+                                velocity.y = WALL_RUN_FORCE;
+                                velocity.add(wallNormal.multiplyScalar(8));
+                                wallRunning = false;
+                                wallRunTimer = 0;
+                                playerState = 'Wall Jump';
+                                showStatusMessage('Wall Jump!');
+                            }
+                            
+                            foundWall = true;
+                            break;
                         }
-                        player.velocityX = 0;
-                    }
-                }
-            }
-        }
-        
-        function updateMovingPlatforms() {
-            for (let platform of movingPlatforms) {
-                platform.x += platform.velocityX;
-                platform.y += platform.velocityY;
-                
-                if (platform.x <= platform.minX || platform.x + platform.width >= platform.maxX) {
-                    platform.velocityX *= -1;
-                }
-                if (platform.y <= platform.minY || platform.y >= platform.maxY) {
-                    platform.velocityY *= -1;
-                }
-            }
-        }
-        
-        function updateObstacles() {
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= obstacles[i].speed * gameSpeed;
-                
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    score += 25;
-                    continue;
-                }
-                
-                // Collision with player
-                if (!player.invulnerable && 
-                    player.x < obstacles[i].x + obstacles[i].width &&
-                    player.x + player.width > obstacles[i].x &&
-                    player.y < obstacles[i].y + obstacles[i].height &&
-                    player.y + player.height > obstacles[i].y) {
-                    
-                    if (player.currentPowerUp === 'SHIELD') {
-                        obstacles.splice(i, 1);
-                        createParticles(obstacles[i].x, obstacles[i].y, 15, '#0080FF');
-                        score += 50;
-                    } else {
-                        takeDamage();
-                        obstacles.splice(i, 1);
                     }
                 }
             }
             
-            // Create new obstacles
-            if (Math.random() < 0.01 * level) {
-                createObstacle();
+            if (!foundWall) {
+                wallRunning = false;
+                wallRunTimer = 0;
             }
         }
-        
-        function updateEnemies() {
-            for (let enemy of enemies) {
-                enemy.x += enemy.velocityX;
+
+        function checkCollisions() {
+            // Ground collision
+            raycaster.set(player.position, new THREE.Vector3(0, -1, 0));
+            const groundIntersects = raycaster.intersectObjects(world);
+            
+            if (groundIntersects.length > 0) {
+                const distance = groundIntersects[0].distance;
+                const groundHeight = sliding ? 1.2 : 2.0;
                 
-                if (enemy.x <= enemy.patrolMin || enemy.x + enemy.width >= enemy.patrolMax) {
-                    enemy.velocityX *= -1;
-                }
-                
-                // Collision with player
-                if (!player.invulnerable && 
-                    player.x < enemy.x + enemy.width &&
-                    player.x + player.width > enemy.x &&
-                    player.y < enemy.y + enemy.height &&
-                    player.y + player.height > enemy.y) {
-                    
-                    if (player.currentPowerUp === 'SHIELD') {
-                        createParticles(enemy.x, enemy.y, 15, '#0080FF');
-                        score += 100;
-                    } else {
-                        takeDamage();
+                if (distance < groundHeight) {
+                    if (!onGround && velocity.y < 0) {
+                        player.position.y = groundIntersects[0].point.y + groundHeight;
+                        velocity.y = 0;
+                        onGround = true;
+                        canJump = true;
+                        wallRunning = false;
+                        wallRunTimer = 0;
+                        
+                        if (!sliding) {
+                            playerState = 'Grounded';
+                        }
                     }
                 }
+            } else {
+                if (onGround && velocity.y <= 0) {
+                    onGround = false;
+                    sliding = false;
+                    slideTimer = 0;
+                    playerState = 'Falling';
+                }
             }
-        }
-        
-        function updatePowerUps() {
-            for (let powerUp of powerUps) {
-                if (powerUp.collected) continue;
+            
+            // Side collisions
+            const collisionRadius = 1.2;
+            const collisionDirections = [
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(-1, 0, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(0, 0, -1)
+            ];
+            
+            for (let dir of collisionDirections) {
+                raycaster.set(player.position, dir);
+                const intersects = raycaster.intersectObjects(world);
                 
-                powerUp.pulse += 0.1;
-                
-                // Collision with player
-                if (player.x < powerUp.x + powerUp.width &&
-                    player.x + player.width > powerUp.x &&
-                    player.y < powerUp.y + powerUp.height &&
-                    player.y + player.height > powerUp.y) {
+                if (intersects.length > 0 && intersects[0].distance < collisionRadius) {
+                    const normal = intersects[0].face.normal.clone();
+                    const pushback = normal.multiplyScalar(collisionRadius - intersects[0].distance);
+                    player.position.add(pushback);
                     
-                    powerUp.collected = true;
-                    player.currentPowerUp = powerUp.type;
-                    player.powerUpTime = powerUpTypes[powerUp.type].duration;
-                    createParticles(powerUp.x, powerUp.y, 20, powerUpTypes[powerUp.type].color);
-                    score += 150;
+                    // Stop velocity in collision direction
+                    if (normal.x !== 0) velocity.x = 0;
+                    if (normal.z !== 0) velocity.z = 0;
                 }
             }
         }
-        
-        function updateCoins() {
-            for (let coin of coins_objects) {
-                if (coin.collected) continue;
-                
-                coin.bounce += 0.2;
-                
-                // Magnet effect
-                if (player.currentPowerUp === 'COIN_MAGNET') {
-                    const dx = player.x - coin.x;
-                    const dy = player.y - coin.y;
-                    const distance = Math.sqrt(dx*dx + dy*dy);
-                    if (distance < 100) {
-                        coin.x += dx * 0.1;
-                        coin.y += dy * 0.1;
-                    }
-                }
-                
-                // Collision with player
-                if (player.x < coin.x + coin.width &&
-                    player.x + player.width > coin.x &&
-                    player.y < coin.y + coin.height &&
-                    player.y + player.height > coin.y) {
-                    
-                    coin.collected = true;
-                    coins++;
-                    score += 50;
-                    createParticles(coin.x, coin.y, 10, '#FFD700');
-                }
-            }
+
+        function updateUI() {
+            if (!gameStarted) return;
+            
+            const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z) * 3.6;
+            document.getElementById('speed').textContent = Math.round(speed) + ' km/h';
+            document.getElementById('height').textContent = Math.round(player.position.y) + 'm';
+            document.getElementById('state').textContent = playerState;
+            
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = Math.floor(gameTime % 60);
+            document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
-        
-        function updateCheckpoints() {
-            for (let checkpoint of checkpoints) {
-                if (checkpoint.activated) continue;
-                
-                if (player.x < checkpoint.x + checkpoint.width &&
-                    player.x + player.width > checkpoint.x &&
-                    player.y < checkpoint.y + checkpoint.height &&
-                    player.y + player.height > checkpoint.y) {
-                    
-                    checkpoint.activated = true;
-                    score += 200;
-                    createParticles(checkpoint.x, checkpoint.y, 25, '#00FF00');
-                }
-            }
+
+        function showStatusMessage(message) {
+            const messageEl = document.createElement('div');
+            messageEl.className = 'status-message show';
+            messageEl.textContent = message;
+            document.getElementById('statusMessages').appendChild(messageEl);
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+                setTimeout(() => {
+                    messageEl.remove();
+                }, 300);
+            }, 2000);
         }
-        
-        function createObstacle() {
-            obstacles.push({
-                x: canvas.width,
-                y: 440,
-                width: 25,
-                height: 30,
-                speed: 2 + level * 0.5,
-                color: '#8B0000'
-            });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const currentTime = performance.now() / 1000;
+            const deltaTime = Math.min(currentTime - lastTime, 0.1);
+            lastTime = currentTime;
+            
+            updateMovement(deltaTime);
+            
+            renderer.render(scene, camera);
         }
-        
-        function createParticles(x, y, count, color) {
-            for (let i = 0; i < count; i++) {
-                particleSystem.push({
-                    x: x,
-                    y: y,
-                    velocityX: (Math.random() - 0.5) * 10,
-                    velocityY: (Math.random() - 0.5) * 10,
-                    life: 60,
-                    color: color,
-                    size: Math.random() * 4 + 2
-                });
-            }
-        }
-        
-        function updateParticles() {
-            for (let i = particleSystem.length - 1; i >= 0; i--) {
-                const particle = particleSystem[i];
-                particle.x += particle.velocityX;
-                particle.y += particle.velocityY;
-                particle.velocityY += 0.2;
-                particle.life--;
-                
-                if (particle.life <= 0) {
-                    particleSystem.splice(i, 1);
-                }
-            }
-        }
-        
-        function activatePowerUp() {
-            if (!player.currentPowerUp) return;
-            
-            // Power-up effects are mostly passive, but some can be activated
-            if (player.currentPowerUp === 'SLOW_TIME') {
-                gameSpeed = 0.3;
-                setTimeout(() => gameSpeed = 1, 3000);
-            }
-        }
-        
-        function takeDamage() {
-            lives--;
-            player.invulnerable = true;
-            player.invulnerableTime = 60;
-            createParticles(player.x, player.y, 20, '#FF0000');
-            
-            if (lives <= 0) {
-                gameOver();
-            }
-        }
-        
-        function draw() {
-            // Clear canvas with gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#87CEEB');
-            gradient.addColorStop(0.6, '#98FB98');
-            gradient.addColorStop(1, '#8B4513');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw clouds
-            drawClouds();
-            
-            // Draw platforms
-            for (let platform of platforms) {
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                
-                // Add highlight
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.fillRect(platform.x, platform.y, platform.width, 3);
-            }
-            
-            // Draw moving platforms
-            for (let platform of movingPlatforms) {
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                
-                // Add glow effect
-                ctx.shadowColor = platform.color;
-                ctx.shadowBlur = 10;
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                ctx.shadowBlur = 0;
-            }
-            
-            // Draw checkpoints
-            for (let checkpoint of checkpoints) {
-                ctx.fillStyle = checkpoint.activated ? '#00FF00' : '#FFD700';
-                ctx.fillRect(checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height);
-                
-                if (!checkpoint.activated) {
-                    ctx.fillStyle = '#FFF';
-                    ctx.font = '20px Arial';
-                    ctx.fillText('!', checkpoint.x + 10, checkpoint.y + 30);
-                }
-            }
-            
-            // Draw coins
-            for (let coin of coins_objects) {
-                if (coin.collected) continue;
-                
-                ctx.save();
-                ctx.translate(coin.x + coin.width/2, coin.y + coin.height/2);
-                ctx.rotate(Date.now() * 0.01);
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(-coin.width/2, -coin.height/2, coin.width, coin.height);
-                
-                // Add sparkle effect
-                ctx.fillStyle = '#FFFF00';
-                ctx.fillRect(-coin.width/4, -coin.height/4, coin.width/2, coin.height/2);
-                ctx.restore();
-            }
-            
-            // Draw power-ups
-            for (let powerUp of powerUps) {
-                if (powerUp.collected) continue;
-                
-                const pulseSize = Math.sin(powerUp.pulse) * 3;
-                ctx.fillStyle = powerUpTypes[powerUp.type].color;
-                ctx.fillRect(powerUp.x - pulseSize/2, powerUp.y - pulseSize/2, 
-                           powerUp.width + pulseSize, powerUp.height + pulseSize);
-                
-                // Add symbol
-                ctx.fillStyle = '#FFF';
-                ctx.font = '16px Arial';
-                ctx.fillText(powerUp.type[0], powerUp.x + 8, powerUp.y + 18);
-            }
-            
-            // Draw enemies
-            for (let enemy of enemies) {
-                ctx.fillStyle = enemy.color;
-                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                
-                // Add eyes
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(enemy.x + 5, enemy.y + 5, 4, 4);
-                ctx.fillRect(enemy.x + 15, enemy.y + 5, 4, 4);
-            }
-            
-            // Draw obstacles
-            for (let obstacle of obstacles) {
-                ctx.fillStyle = obstacle.color;
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                
-                // Add spikes
-                ctx.fillStyle = '#A00000';
-                for (let i = 0; i < obstacle.width; i += 8) {
-                    ctx.fillRect(obstacle.x + i, obstacle.y - 5, 4, 8);
-                }
-            }
-            
-            // Draw player
-            ctx.save();
-            if (player.invulnerable) {
-                ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.01) * 0.3;
-            }
-            
-            ctx.fillStyle = player.color;
-            if (player.currentPowerUp === 'SHIELD') {
-                ctx.shadowColor = '#0080FF';
-                ctx.shadowBlur = 15;
-            }
-            
-            let playerHeight = player.sliding ? player.height * 0.6 : player.height;
-            let playerY = player.sliding ? player.y + player.height * 0.4 : player.y;
-            
-            ctx.fillRect(player.x, playerY, player.width, playerHeight);
-            ctx.shadowBlur = 0;
-            
-            // Draw player details
-            ctx.fillStyle = 'white';
-            ctx.fillRect(player.x + 5, player.y + 5, 6, 6);
-            ctx.fillRect(player.x + 15, player.y + 5, 6, 6);
-            ctx.fillStyle = 'black';
-            ctx.fillRect(player.x + 7, player.y + 7, 2, 2);
-            ctx.fillRect(player.x + 17, player.y + 7, 2, 2);
-            
-            ctx.restore();
-            
-            // Draw particles
-            for (let particle of particleSystem) {
-                ctx.fillStyle = particle.color;
-                ctx.globalAlpha = particle.life / 60;
-                ctx.fill
+
+        // Initialize the game
+        init();
+    </script>
+</body>
+</html>
